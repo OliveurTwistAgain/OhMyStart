@@ -1,0 +1,117 @@
+{% from "macros/_form.html" import render_form %}
+{% set page_title = 'Web2o - Idées de Monuments à Visiter' %}
+{% extends 'layouts/base.html' %}
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+{% block head %}
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block body %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var map = L.map('map').setView([48.858844, 2.294351], 13); // Exemple de coordonnées pour Paris
+
+    // Ajout d'une couche de tuiles OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Ajouter des marqueurs pour chaque monument
+    {% if monuments %}
+    {% for monument in monuments %}
+    // Exemple de coordonnées, ajustez selon les données de votre monument
+    L.marker([{{ monument.latitude }}, {{ monument.longitude }}]).addTo(map)
+    .bindPopup('<b>{{ monument.name }}</b><br>{{ monument.description }}');
+  {% endfor %}
+  {% endif %}
+  });
+</script>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 offset-lg-2 text-center">
+      <h2 class="mt-5">Bienvenue sur Web2o</h2>
+      <p class="lead">Vous aimez voyager et cherchez des monuments à visiter ? Remplissez le formulaire ci-dessous pour
+        découvrir des monuments partout dans le monde.</p>
+    </div>
+    <div class="col-lg-8 offset-lg-2 text-center">
+      <!-- Formulaire de recherche -->
+      <form method="get" action="{{ url_for('frontend.index') }}">
+        <input type="text" name="q" placeholder="Search for monuments..." value="{{ query }}">
+        <button type="submit">Search</button>
+      </form>
+
+      <!-- Résultats de la recherche -->
+      {% if query %}
+      <h2>Search Results for "{{ query }}"</h2>
+      {% if results %}
+      <ul>
+        {% for monument in results %}
+        <li>{{ monument.name }} - {{ monument.description }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>No results found.</p>
+      {% endif %}
+      {% endif %}
+
+      <!-- Autres contenus de la page d'accueil -->
+
+    </div>
+    <div class="col-lg-8 offset-lg-2 text-center mt-5">
+      {% if monuments %}
+      <h3>Monuments à visiter près de {{ city }} :</h3>
+      <table class="table table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Localisation</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for monument in monuments %}
+          <tr>
+            <td>{{ monument.name }}</td>
+            <td>{{ monument.location }}</td>
+            <td>{{ monument.description }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted">Veuillez entrer une ville pour voir les monuments à visiter.</p>
+      {% endif %}
+    </div>
+    <div class="col-lg-8 offset-lg-2 text-center mt-5">
+      <!-- Div pour la carte OpenStreetMap -->
+      <div id="map" style="height: 400px;"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <h5>À propos</h5>
+        <p>Description du site et de son objectif...</p>
+      </div>
+      <div class="col-md-4">
+        <h5>Crédits</h5>
+        <p>Informations sur les contributions, sources, etc...</p>
+      </div>
+      <div class="col-md-4">
+        <h5>Contact</h5>
+        <p>Informations de contact ou formulaire de contact...</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+{% endblock %}

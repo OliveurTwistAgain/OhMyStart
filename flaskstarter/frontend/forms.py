@@ -3,11 +3,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from flask import Markup
+from markupsafe import Markup
 from flask_wtf import FlaskForm
 from wtforms import (ValidationError, HiddenField, BooleanField, StringField,
-                     PasswordField, SubmitField, TextAreaField, EmailField)
-from wtforms.validators import InputRequired, Length, EqualTo, Email, DataRequired, Optional
+                     PasswordField, SubmitField, TextAreaField, EmailField, URLField)
+from wtforms.validators import InputRequired, Length, EqualTo, Email, DataRequired, Optional, URL
 
 from ..utils import (NAME_LEN_MIN, NAME_LEN_MAX, PASSWORD_LEN_MIN, PASSWORD_LEN_MAX)
 from ..user import Users
@@ -45,14 +45,18 @@ class ChangePasswordForm(FlaskForm):
     submit = SubmitField('Save')
 
 class ContactUsForm(FlaskForm):
-    name = StringField(u'Name', [InputRequired(), Length(max=64)])
-    email = EmailField(u'Your Email', [InputRequired(), Email(), Length(max=64)])
-    subject = StringField(u'Subject', [InputRequired(), Length(5, 128)])
-    message = TextAreaField(u'Your Message', [InputRequired(), Length(10, 1024)])
-    submit = SubmitField('Submit')
+    nom = StringField(u'Nom', [InputRequired(), Length(max=64)])
+    email = EmailField(u'Email', [InputRequired(), Email(), Length(max=64)])
+    sujet = StringField(u'Sujet', [InputRequired(), Length(5, 128)])
+    message = TextAreaField(u'Message', [InputRequired(), Length(10, 1024)])
+    submit = SubmitField('Envoyer')
 
-class MonumentForm(FlaskForm):
-    name = StringField('Nom', validators=[DataRequired()])
+class LieuForm(FlaskForm):
+    nom = StringField('Nom', validators=[DataRequired()])
     description = TextAreaField('Description', validators=[Optional()])
-    location = StringField('Localisation', validators=[Optional()])
+    ville = StringField('Ville', validators=[Optional()])
+    pays = StringField('Pays', validators=[Optional()])
     image_url = URLField('URL de l\'image', validators=[Optional()])
+    latitude = StringField('Latitude', validators=[Optional()])
+    longitude = StringField('Longitude', validators=[Optional()])
+    submit = SubmitField('Enregistrer')

@@ -1,3 +1,5 @@
+# flaskstarter\user\constants.py 
+
 # -*- coding: utf-8 -*-
 
 # User role

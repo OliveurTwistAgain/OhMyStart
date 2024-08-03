@@ -2,8 +2,8 @@
 
 {% block body %}
 <div class="container">
-    <h2>Éditer le Monument</h2>
-    <form method="post" action="{{ url_for('frontend.edit_monument', id=monument.id) }}">
+    <h2>Éditer le Lieu à Visiter</h2>
+    <form method="post" action="{{ url_for('frontend.edit_lieu', id=lieu.id) }}">
         {{ render_form(form) }}
         <button type="submit" class="btn btn-primary">Enregistrer</button>
     </form>

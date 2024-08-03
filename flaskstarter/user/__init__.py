@@ -1,3 +1,5 @@
+# flaskstarter\user\__init__.py
+
 # -*- coding: utf-8 -*-
 
 from .models import Users, UsersAdmin

@@ -1,3 +1,5 @@
+# flaskstarter/config.py
+
 # -*- coding: utf-8 -*-
 
 import os
@@ -13,7 +15,7 @@ class BaseConfig(object):
     DEBUG = False
     TESTING = False
 
-    SECRET_KEY = 'always-change-this-secret-key-with-random-alpha-nums'
+    SECRET_KEY = 'always-change-this-secret-key-with-random-alpha-nums'  # Remplacez par une clé secrète sécurisée
 
 class DefaultConfig(BaseConfig):
     DEBUG = True
@@ -21,7 +23,7 @@ class DefaultConfig(BaseConfig):
     # Flask-SQLAlchemy
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BaseConfig.PROJECT_ROOT, "flaskstarter/db.sqlite")}'  # Corrected path
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BaseConfig.PROJECT_ROOT, "flaskstarter/db.sqlite")}'  # Chemin absolu pour la base de données
 
     # Flask-Cache
     CACHE_TYPE = 'simple'
@@ -29,9 +31,9 @@ class DefaultConfig(BaseConfig):
 
     # Flask-Mail
     MAIL_DEBUG = False
-    MAIL_SERVER = ""
-    MAIL_PORT = 587
+    MAIL_SERVER = "smtp.protonmail.com"  # Vérifiez si le serveur et le port sont corrects pour ProtonMail
+    MAIL_PORT = 587  # Le port 1025 peut ne pas être correct pour ProtonMail, utilisez 587 ou 465 si nécessaire
     MAIL_USE_TLS = True
-    MAIL_USERNAME = "admin-mail@yourdomain-flaskstarter.domain"
-    MAIL_PASSWORD = ""
+    MAIL_USERNAME = "oliveur.hoop@proton.me"
+    MAIL_PASSWORD = "NzWhakatane64!"  # Assurez-vous que ce mot de passe est sécurisé et correct
     MAIL_DEFAULT_SENDER = MAIL_USERNAME

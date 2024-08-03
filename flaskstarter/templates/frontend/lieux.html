@@ -1,0 +1,39 @@
+{% extends 'layouts/base.html' %}
+
+{% block body %}
+<div class="container">
+    <h2>Liste des Lieux à visiter</h2>
+    <a href="{{ url_for('frontend.add_lieu') }}" class="btn btn-primary">Ajouter un Lieu à visiter</a>
+    <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Ville</th>
+                <th>Pays</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lieu in lieux %}
+            <tr>
+                <td>{{ lieu.name }}</td>
+                <td>{{ lieu.description }}</td>
+                <td>{{ lieu.location }}</td>
+                <td><img src="{{ lieu.image_url }}" alt="Image" style="width: 100px;"></td>
+                <td>
+                    <a href="{{ url_for('frontend.edit_lieu', id=lieu.id) }}" class="btn btn-warning">Éditer</a>
+                    <form action="{{ url_for('frontend.delete_lieu', id=lieu.id) }}" method="post"
+                        style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

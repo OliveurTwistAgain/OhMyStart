@@ -9,21 +9,14 @@ from flask import (Blueprint, render_template, current_app, request,
 from flask_login import (login_required, login_user, current_user,
                          logout_user, login_fresh)
 
-from ..tasks import MyTaskForm
 from ..user import Users, ACTIVE
 from ..extensions import db, login_manager
 from .forms import (SignupForm, LoginForm, RecoverPasswordForm,
-                    ChangePasswordForm, ContactUsForm, MonumentForm)
-from .models import ContactUs, Monument
+                    ChangePasswordForm, ContactUsForm, LieuForm)
+from .models import ContactUs, Lieu
 from ..emails import send_async_email
 
 frontend = Blueprint('frontend', __name__)
-
-@frontend.route('/dashboard')
-@login_required
-def dashboard():
-    _task_form = MyTaskForm()
-    return render_template('dashboard/dashboard.html', task_form=_task_form, _active_dash=True)
 
 @frontend.route('/', methods=['GET', 'POST'])
 def index():
@@ -34,68 +27,64 @@ def index():
     results = []
 
     if query:
-        # Rechercher les monuments par nom (ou d'autres caractéristiques)
-        results = Monument.query.filter(Monument.name.ilike(f'%{query}%')).all()
+        # Rechercher les lieux par nom (ou d'autres caractéristiques)
+        results = Lieu.query.filter(Lieu.name.ilike(f'%{query}%')).all()
 
-    # Autres monuments à afficher, si besoin
-    monuments = Monument.query.limit(10).all()  # Exemples de monuments
+    # Autres lieux à afficher, si besoin
+    lieux = Lieu.query.limit(10).all()  # Exemples de lieux
     city = "une ville"  # Remplacer par la ville réelle ou ajuster selon vos besoins
 
-    return render_template('frontend/landing.html', _active_home=True, results=results, query=query, monuments=monuments, city=city)
+    return render_template('frontend/landing.html', _active_home=True, results=results, query=query, lieux=lieux, city=city)
 
-# Route pour afficher tous les monuments
-@frontend.route('/monuments')
-def monuments():
-    monuments = Monument.query.all()
-    return render_template('frontend/monuments.html', monuments=monuments)
+@frontend.route('/lieux')
+def lieux():
+    lieux = Lieu.query.all()
+    return render_template('frontend/lieux.html', lieux=lieux)
 
-# Route pour ajouter un monument
-@frontend.route('/monuments/add', methods=['GET', 'POST'])
+@frontend.route('/lieux/add', methods=['GET', 'POST'])
 @login_required
-def add_monument():
-    form = MonumentForm()
+def add_lieu():
+    form = LieuForm()
 
     if form.validate_on_submit():
-        monument = Monument(
+        lieu = Lieu(
             name=form.name.data,
             description=form.description.data,
             location=form.location.data,
             image_url=form.image_url.data
         )
-        db.session.add(monument)
+        db.session.add(lieu)
         db.session.commit()
-        flash('Monument ajouté avec succès!', 'success')
-        return redirect(url_for('frontend.monuments'))
+        flash('Lieu ajouté avec succès!', 'success')
+        return redirect(url_for('frontend.lieux'))
 
-    return render_template('frontend/add_monument.html', form=form)
+    return render_template('frontend/add_lieu.html', form=form)
 
-# Route pour éditer un monument
-@frontend.route('/monuments/edit/<int:id>', methods=['GET', 'POST'])
+@frontend.route('/lieux/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
-def edit_monument(id):
-    monument = Monument.query.get_or_404(id)
-    form = MonumentForm(obj=monument)
+def edit_lieu(id):
+    lieu = Lieu.query.get_or_404(id)
+    form = LieuForm(obj=lieu)
 
     if form.validate_on_submit():
-        monument.name = form.name.data
-        monument.description = form.description.data
-        monument.location = form.location.data
-        monument.image_url = form.image_url.data
+        lieu.name = form.name.data
+        lieu.description = form.description.data
+        lieu.location = form.location.data
+        lieu.image_url = form.image_url.data
         db.session.commit()
-        flash('Monument modifié avec succès!', 'success')
-        return redirect(url_for('frontend.monuments'))
+        flash('Lieu modifié avec succès!', 'success')
+        return redirect(url_for('frontend.lieux'))
 
-    return render_template('frontend/edit_monument.html', form=form, monument=monument)
+    return render_template('frontend/edit_lieu.html', form=form, lieu=lieu)
 
-# Route pour supprimer un monument
-@frontend.route('/monuments/delete/<int:id>', methods=['POST'])
+@frontend.route('/lieux/delete/<int:id>', methods=['POST'])
 @login_required
-def delete_monument(id):
-    monument = Monument.query.get_or_404(id)
-    db.session.delete(monument)
+def delete_lieu(id):
+    lieu = Lieu.query.get_or_404(id)
+    db.session.delete(lieu)
     db.session.commit()
-    flash('Monument supprimé avec succès!', 'success')
-    return redirect(url_for('frontend.monuments'))
+    flash('Lieu supprimé avec succès!', 'success')
+    return redirect(url_for('frontend.lieux'))
 
 @frontend.route('/contact-us', methods=['GET', 'POST'])
 def contact_us():
@@ -153,7 +142,7 @@ def signup():
     return render_template('frontend/signup.html', form=form, _active_signup=True)
 
 def confirm_user_mail(name, email):
-    s = URLSafeSerializer('serliaizer_code')
+    s = URLSafeSerializer('your-secret-key')  # Modifiez ceci pour une clé sécurisée
     key = s.dumps([name, email])
     subject = 'Confirm your account for ' + current_app.config['PROJECT_NAME']
     url = url_for('frontend.confirm_account', secretstring=key, _external=True)
@@ -162,20 +151,23 @@ def confirm_user_mail(name, email):
 
 @frontend.route('/confirm_account/<secretstring>', methods=['GET', 'POST'])
 def confirm_account(secretstring):
-    s = URLSafeSerializer('serliaizer_code')
+    s = URLSafeSerializer('your-secret-key')  # Modifiez ceci pour une clé sécurisée
     uname, uemail = s.loads(secretstring)
     user = Users.query.filter_by(name=uname).first()
-    user.status_code = ACTIVE
-    db.session.add(user)
-    db.session.commit()
-    flash(u'Your account was confirmed successfully!!!', 'success')
+    if user:
+        user.status_code = ACTIVE
+        db.session.add(user)
+        db.session.commit()
+        flash(u'Your account was confirmed successfully!!!', 'success')
+    else:
+        flash(u'Invalid confirmation link', 'danger')
     return redirect(url_for('frontend.login'))
 
 @frontend.route('/change_password', methods=['GET', 'POST'])
 def change_password():
     if current_user.is_authenticated:
         if not login_fresh():
-            return login_manager.needs_refresh()
+            return redirect(url_for('frontend.login'))
     form = ChangePasswordForm(email_activation_key=request.values.get("email_activation_key"), email=request.values.get("email"))
     if form.validate_on_submit():
         update_password(form.email.data, form.email_activation_key.data, form.password.data)
@@ -190,30 +182,14 @@ def update_password(email, email_activation_key, password):
         user.email_activation_key = None
         db.session.add(user)
         db.session.commit()
+        flash(u"Your password was updated", "success")
 
-@frontend.route('/reset_password', methods=['GET', 'POST'])
-def reset_password():
-    form = RecoverPasswordForm()
-    if form.validate_on_submit():
-        user = Users.query.filter(Users.email.ilike(form.email.data)).first()
-        if user:
-            flash('Please see your email for instructions on how to access your account', 'success')
-            user.email_activation_key = str(uuid4())
-            db.session.add(user)
-            db.session.commit()
-            subject = 'Reset your password in ' + current_app.config['PROJECT_NAME']
-            url = url_for('frontend.change_password', email=user.email, email_activation_key=user.email_activation_key, _external=True)
-            html = render_template('macros/_reset_password.html', project=current_app.config['PROJECT_NAME'], name=user.name, url=url)
-            send_async_email(subject, html, user.email)
-            return render_template('frontend/reset_password.html', form=form)
-        else:
-            flash('Sorry, no user found for that email address', 'danger')
-    return render_template('frontend/reset_password.html', form=form)
+@frontend.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('frontend/dashboard.html')
 
-@frontend.route('/terms')
-def terms():
-    return "To be updated soon.."
-
-@frontend.route('/about-us')
-def about_us():
-    return "To be updated soon.."
+@frontend.route('/profile')
+@login_required
+def profile():
+    return render_template('frontend/profile.html')

@@ -1,3 +1,5 @@
+# flaskstarter/frontend/models.py
+
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
@@ -7,51 +9,44 @@ from flask_admin.contrib import sqla
 from ..extensions import db
 from ..utils import get_current_time
 
-# Déclaration du modèle Monument
-class Monument(db.Model):
+# Declarer le modèle PlaceToVisit
+
+class Lieu(db.Model):
+    __tablename__ = 'placestovisit'
+    
     id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    name = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=get_current_time)
+    nom = db.Column(db.String(255))
     description = db.Column(db.Text)
-    location = db.Column(db.String(255))
-    image_url = db.Column(db.String(255))
+    ville = db.Column(db.String(255))
+    pays = db.Column(db.String(255))
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
-    id_users = db.Column(db.Integer, db.ForeignKey('users.id'))  # Associé à la table des utilisateurs
-
-    # Relation avec le modèle Users
-    user = db.relationship('Users', backref=db.backref('monuments', lazy=True))
+    image_url = db.Column(db.String(255))
+    url = db.Column(db.String(255))
 
     def __repr__(self):
-        return f'<Monument {self.name}>'
-
-# Déclaration du modèle Users
-class Users(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    # Ajoutez d'autres champs nécessaires pour les utilisateurs
+        return f'<PlaceToVisit {self.id}>'
 
 # Déclaration du modèle ContactUs
 class ContactUs(db.Model):
     __tablename__ = 'contactus'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nullable=False)
+    nom = db.Column(db.String(64), nullable=False)
     email = db.Column(db.String(64), nullable=False)
-    subject = db.Column(db.String(128), nullable=False)
+    sujet = db.Column(db.String(128), nullable=False)
     message = db.Column(db.String(2048), nullable=False)
-    received_time = db.Column(db.DateTime, default=get_current_time)
+    date_heure = db.Column(db.DateTime, default=get_current_time)
 
-    def __unicode__(self):
+    def __repr__(self):
         _str = '%s. %s %s' % (self.id, self.name, self.email)
         return str(_str)
 
 # Vue personnalisée pour ContactUs dans l'admin
 class ContactUsAdmin(sqla.ModelView):
-    column_sortable_list = ('id', 'name', 'email', 'received_time')
-    column_filters = ('id', 'name', 'email', 'received_time')
+    column_sortable_list = ('id', 'nom', 'email', 'date_heure')
+    column_filters = ('id', 'nom', 'email', 'date_heure')
 
     def __init__(self, session):
         super(ContactUsAdmin, self).__init__(ContactUs, session)

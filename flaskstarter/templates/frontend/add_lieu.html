@@ -2,8 +2,8 @@
 
 {% block body %}
 <div class="container">
-    <h2>Ajouter un Monument</h2>
-    <form method="post" action="{{ url_for('frontend.add_monument') }}">
+    <h2>Ajouter un Lieu à visiter</h2>
+    <form method="post" action="{{ url_for('frontend.add_lieu') }}">
         {{ render_form(form) }}
         <button type="submit" class="btn btn-primary">Ajouter</button>
     </form>

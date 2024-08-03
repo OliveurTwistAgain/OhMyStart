@@ -1,9 +1,12 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+# flaskstarter/__init__.py
 
-# Initialisation de SQLAlchemy et Flask-Migrate
-db = SQLAlchemy()
+# Initialisation de l'application Flask
+
+from flask import Flask
+from flask_migrate import Migrate
+from .extensions import db, mail, cache, login_manager, admin
+
+# Initialisation de Flask-Migrate
 migrate = Migrate()
 
 def create_app(config_class='flaskstarter.config.DefaultConfig'):
@@ -14,13 +17,17 @@ def create_app(config_class='flaskstarter.config.DefaultConfig'):
     
     # Initialisation des extensions
     db.init_app(app)
+    mail.init_app(app)
+    cache.init_app(app)
+    login_manager.init_app(app)
+    admin.init_app(app)
     migrate.init_app(app, db)
 
-    # Enregistrez les blueprints ici
-    # Par exemple :
-    # from .some_module import some_blueprint
-    # app.register_blueprint(some_blueprint)
-
-    # Autres configurations comme la gestion des erreurs, etc.
+    # Enregistrement des blueprints
+    from .frontend.views import frontend
+    from .settings.views import settings
     
+    app.register_blueprint(frontend)
+    app.register_blueprint(settings)
+
     return app

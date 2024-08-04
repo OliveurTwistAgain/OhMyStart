@@ -9,8 +9,9 @@ from flask import (Blueprint, render_template, current_app, request,
 from flask_login import (login_required, login_user, current_user,
                          logout_user, login_fresh)
 
-from ..user import Users, ACTIVE
-from ..extensions import db, login_manager
+from ..user.models import Users
+from ..user.constants import ACTIVE
+from ..extensions import db
 from .forms import (SignupForm, LoginForm, RecoverPasswordForm,
                     ChangePasswordForm, ContactUsForm, LieuForm)
 from .models import ContactUs, Lieu
@@ -23,16 +24,14 @@ def index():
     if current_user.is_authenticated:
         return redirect(url_for('frontend.dashboard'))
 
-    query = request.args.get('q', '')  # Récupère le terme de recherche depuis la query string
+    query = request.args.get('q', '')
     results = []
 
     if query:
-        # Rechercher les lieux par nom (ou d'autres caractéristiques)
-        results = Lieu.query.filter(Lieu.name.ilike(f'%{query}%')).all()
+        results = Lieu.query.filter(Lieu.nom.ilike(f'%{query}%')).all()  # Utilisation de 'nom'
 
-    # Autres lieux à afficher, si besoin
-    lieux = Lieu.query.limit(10).all()  # Exemples de lieux
-    city = "une ville"  # Remplacer par la ville réelle ou ajuster selon vos besoins
+    lieux = Lieu.query.limit(10).all()
+    city = "une ville"
 
     return render_template('frontend/landing.html', _active_home=True, results=results, query=query, lieux=lieux, city=city)
 
@@ -48,10 +47,14 @@ def add_lieu():
 
     if form.validate_on_submit():
         lieu = Lieu(
-            name=form.name.data,
+            nom=form.nom.data,  # Assurez-vous que le modèle utilise 'nom'
             description=form.description.data,
-            location=form.location.data,
-            image_url=form.image_url.data
+            ville=form.ville.data,
+            pays=form.pays.data,
+            latitude=form.latitude.data,
+            longitude=form.longitude.data,
+            image_url=form.image_url.data,
+            url=form.url.data  # Ajoutez ce champ s'il est requis
         )
         db.session.add(lieu)
         db.session.commit()
@@ -67,10 +70,14 @@ def edit_lieu(id):
     form = LieuForm(obj=lieu)
 
     if form.validate_on_submit():
-        lieu.name = form.name.data
+        lieu.nom = form.nom.data
         lieu.description = form.description.data
-        lieu.location = form.location.data
+        lieu.ville = form.ville.data
+        lieu.pays = form.pays.data
+        lieu.latitude = form.latitude.data
+        lieu.longitude = form.longitude.data
         lieu.image_url = form.image_url.data
+        lieu.url = form.url.data  # Ajoutez ce champ s'il est requis
         db.session.commit()
         flash('Lieu modifié avec succès!', 'success')
         return redirect(url_for('frontend.lieux'))
@@ -102,17 +109,17 @@ def contact_us():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('frontend.index'))
-    form = LoginForm(login=request.args.get('login', None), next=request.args.get('next', None))
+    form = LoginForm(next=request.args.get('next'))
     if form.validate_on_submit():
-        user, authenticated = Users.authenticate(form.login.data, form.password.data)
-        if user and authenticated:
-            if user.status_code != 2:
+        user = Users.query.filter_by(email=form.login.data).first()
+        if user and user.check_password(form.password.data):
+            if user.status_code != ACTIVE:
                 flash("Please verify your email address to continue", "danger")
                 return redirect(url_for('frontend.login'))
-            remember = request.form.get('remember') == 'y'
+            remember = form.remember.data
             if login_user(user, remember=remember):
                 flash("Logged in", 'success')
-            return redirect(form.next.data or url_for('frontend.index'))
+                return redirect(form.next.data or url_for('frontend.index'))
         else:
             flash('Sorry, invalid login', 'danger')
     return render_template('frontend/login.html', form=form, _active_login=True)
@@ -137,12 +144,12 @@ def signup():
         db.session.add(user)
         db.session.commit()
         confirm_user_mail(form.name.data, form.email.data)
-        flash(u'Confirmation email sent to ' + form.email.data + ' Please verify!', 'success')
+        flash('Confirmation email sent to ' + form.email.data + '. Please verify!', 'success')
         return redirect(url_for('frontend.login'))
     return render_template('frontend/signup.html', form=form, _active_signup=True)
 
 def confirm_user_mail(name, email):
-    s = URLSafeSerializer('your-secret-key')  # Modifiez ceci pour une clé sécurisée
+    s = URLSafeSerializer(current_app.config['SECRET_KEY'])  # Utilisez une clé secrète sécurisée
     key = s.dumps([name, email])
     subject = 'Confirm your account for ' + current_app.config['PROJECT_NAME']
     url = url_for('frontend.confirm_account', secretstring=key, _external=True)
@@ -151,38 +158,37 @@ def confirm_user_mail(name, email):
 
 @frontend.route('/confirm_account/<secretstring>', methods=['GET', 'POST'])
 def confirm_account(secretstring):
-    s = URLSafeSerializer('your-secret-key')  # Modifiez ceci pour une clé sécurisée
+    s = URLSafeSerializer(current_app.config['SECRET_KEY'])  # Utilisez une clé secrète sécurisée
     uname, uemail = s.loads(secretstring)
-    user = Users.query.filter_by(name=uname).first()
+    user = Users.query.filter_by(email=uemail).first()
     if user:
         user.status_code = ACTIVE
-        db.session.add(user)
         db.session.commit()
-        flash(u'Your account was confirmed successfully!!!', 'success')
+        flash('Your account was confirmed successfully!!!', 'success')
     else:
-        flash(u'Invalid confirmation link', 'danger')
+        flash('Invalid confirmation link', 'danger')
     return redirect(url_for('frontend.login'))
 
 @frontend.route('/change_password', methods=['GET', 'POST'])
 def change_password():
-    if current_user.is_authenticated:
-        if not login_fresh():
-            return redirect(url_for('frontend.login'))
-    form = ChangePasswordForm(email_activation_key=request.values.get("email_activation_key"), email=request.values.get("email"))
+    if not current_user.is_authenticated or not login_fresh():
+        return redirect(url_for('frontend.login'))
+    form = ChangePasswordForm(email_activation_key=request.args.get("email_activation_key"), email=request.args.get("email"))
     if form.validate_on_submit():
         update_password(form.email.data, form.email_activation_key.data, form.password.data)
-        flash(u"Your password has been changed, log in again", "success")
+        flash("Your password has been changed, log in again", "success")
         return redirect(url_for("frontend.login"))
     return render_template("frontend/change_password.html", form=form)
 
 def update_password(email, email_activation_key, password):
-    user = Users.query.filter(Users.email.ilike(email), email_activation_key=email_activation_key).first()
+    user = Users.query.filter_by(email=email, email_activation_key=email_activation_key).first()
     if user:
         user.password = password
         user.email_activation_key = None
-        db.session.add(user)
         db.session.commit()
-        flash(u"Your password was updated", "success")
+        flash("Your password was updated", "success")
+    else:
+        flash("Invalid email or activation key", "danger")
 
 @frontend.route('/dashboard')
 @login_required

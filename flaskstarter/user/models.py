@@ -1,4 +1,4 @@
-# flaskstarter/user/models.py
+# flaskstarter\user\models.py
 
 # -*- coding: utf-8 -*-
 
@@ -45,6 +45,8 @@ class Users(db.Model, UserMixin):
     email_activation_key = Column(String(STRING_LEN))
     created_time = Column(DateTime, default=get_current_time)
     _password_hash = Column('password', String(128), nullable=False)
+    role_code = Column(SmallInteger, default=USER, nullable=False)
+    status_code = Column(SmallInteger, default=INACTIVE)
 
     @property
     def password(self):
@@ -57,8 +59,6 @@ class Users(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self._password_hash, password)
 
-    role_code = Column(SmallInteger, default=USER, nullable=False)
-
     @property
     def role(self):
         return USER_ROLE[self.role_code]
@@ -68,8 +68,6 @@ class Users(db.Model, UserMixin):
 
     def is_authenticated(self):
         return True
-
-    status_code = Column(SmallInteger, default=INACTIVE)
 
     @property
     def status(self):
@@ -101,7 +99,7 @@ class UsersAdmin(sqla.ModelView):
     column_searchable_list = ('email',)
     column_filters = ('id', 'nom', 'email', 'created_time', 'role_code')
 
-    form_excluded_columns = ('password',)
+    form_excluded_columns = ('_password_hash',)  # Changed from 'password' to '_password_hash'
 
     form_choices = {
         'role_code': [

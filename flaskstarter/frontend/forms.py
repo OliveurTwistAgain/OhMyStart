@@ -6,7 +6,7 @@ import sys
 from markupsafe import Markup
 from flask_wtf import FlaskForm
 from wtforms import (ValidationError, HiddenField, BooleanField, StringField,
-                     PasswordField, SubmitField, TextAreaField, EmailField, URLField)
+                     PasswordField, SubmitField, TextAreaField, EmailField, URLField, DecimalField)
 from wtforms.validators import InputRequired, Length, EqualTo, Email, DataRequired, Optional, URL
 
 from ..utils import (NAME_LEN_MIN, NAME_LEN_MAX, PASSWORD_LEN_MIN, PASSWORD_LEN_MAX)
@@ -16,7 +16,7 @@ terms_html = Markup('<a target="blank" href="/terms">Terms of Service</a>')
 
 class LoginForm(FlaskForm):
     next = HiddenField()
-    login = StringField(u'Email', [InputRequired()])
+    login = EmailField(u'Email', [InputRequired()])
     password = PasswordField('Password', [InputRequired(), Length(PASSWORD_LEN_MIN, PASSWORD_LEN_MAX)])
     remember = BooleanField('Remember me')
     submit = SubmitField('Sign in')
@@ -31,7 +31,7 @@ class SignupForm(FlaskForm):
 
     def validate_email(self, field):
         if Users.query.filter(Users.email.ilike(field.data)).first() is not None:
-            raise ValidationError(u'This email is taken')
+            raise ValidationError(u'Cet email est déjà enregistré')
 
 class RecoverPasswordForm(FlaskForm):
     email = EmailField(u'Your email', [Email()])
@@ -41,7 +41,7 @@ class ChangePasswordForm(FlaskForm):
     email_activation_key = HiddenField()
     email = HiddenField()
     password = PasswordField(u'Password', [InputRequired(), Length(PASSWORD_LEN_MIN, PASSWORD_LEN_MAX)])
-    password_again = PasswordField(u'Password again', [EqualTo('password', message="Passwords don't match")])
+    password_again = PasswordField(u'Password again', [EqualTo('password', message="Le mot de passe ne correspond pas")])
     submit = SubmitField('Save')
 
 class ContactUsForm(FlaskForm):
@@ -57,6 +57,7 @@ class LieuForm(FlaskForm):
     ville = StringField('Ville', validators=[Optional()])
     pays = StringField('Pays', validators=[Optional()])
     image_url = URLField('URL de l\'image', validators=[Optional()])
-    latitude = StringField('Latitude', validators=[Optional()])
-    longitude = StringField('Longitude', validators=[Optional()])
+    latitude = DecimalField('Latitude', validators=[Optional()], places=6)
+    longitude = DecimalField('Longitude', validators=[Optional()], places=6)
     submit = SubmitField('Enregistrer')
+

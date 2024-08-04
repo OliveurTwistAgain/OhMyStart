@@ -5,18 +5,22 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 from flask_caching import Cache
-from flask_login import LoginManager
 from flask_admin import Admin, AdminIndexView
 from flask_admin.menu import MenuLink
 from flask_migrate import Migrate
+from flask_login import LoginManager
 
 # Instances des extensions
+login_manager = LoginManager()
+
+# Configuration de LoginManager
+login_manager.login_view = "frontend.login"
+login_manager.login_message = "Svp, connectez-vous pour accéder à cette page."
+
+# Instances des autres extensions
 db = SQLAlchemy()
 mail = Mail()
 cache = Cache()
-login_manager = LoginManager()
-login_manager.login_view = "frontend.login"  # Assurez-vous que cette vue existe
-login_manager.login_message = "Please login or signup to add a new trip"
 
 class HomeView(AdminIndexView):
     def is_visible(self):

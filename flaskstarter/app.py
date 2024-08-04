@@ -1,4 +1,4 @@
-# flaskstarter\app.py
+# flaskstarter/app.py
 
 # -*- coding: utf-8 -*-
 
@@ -10,7 +10,7 @@ from .frontend import frontend, ContactUsAdmin
 from .extensions import db, mail, cache, login_manager, admin
 from .utils import INSTANCE_FOLDER_PATH, pretty_date
 
-# For import *
+# Pour import *
 __all__ = ['create_app']
 
 DEFAULT_BLUEPRINTS = (
@@ -19,6 +19,7 @@ DEFAULT_BLUEPRINTS = (
 )
 
 def create_app(config=None, app_name=None, blueprints=None):
+    # Création de l'application Flask
     if app_name is None:
         app_name = DefaultConfig.PROJECT
     if blueprints is None:
@@ -47,12 +48,10 @@ def configure_extensions(app):
     db.init_app(app)
     mail.init_app(app)
     cache.init_app(app)
+    admin.init_app(app)
     admin.add_view(ContactUsAdmin(db.session))
     admin.add_view(UsersAdmin(db.session))
-    admin.init_app(app)
-    
     login_manager.init_app(app)
-    login_manager.login_view = 'login'  # Update this to match your login view
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -72,8 +71,13 @@ def configure_template_filters(app):
         return value.strftime(format)
 
 def configure_logging(app):
-    if app.debug:
-        return
+    if not app.debug:
+        import logging
+        from logging.handlers import RotatingFileHandler
+
+        file_handler = RotatingFileHandler('error.log', maxBytes=10240, backupCount=10)
+        file_handler.setLevel(logging.ERROR)
+        app.logger.addHandler(file_handler)
 
 def configure_error_handlers(app):
     @app.errorhandler(403)
